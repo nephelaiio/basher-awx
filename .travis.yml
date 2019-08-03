@@ -13,4 +13,4 @@ install:
   - basher install sstephenson/bats
 
 script:
-  - shellcheck  tests/quality/
+  - bats tests/quality/
