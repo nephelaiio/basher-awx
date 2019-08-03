@@ -10,7 +10,7 @@ PARAMS=$SUCCESS
 
 function check_requirement {
     cmd=$1
-    command -v ${cmd} >/dev/null 2>&1 || {
+    command -v "${cmd}" >/dev/null 2>&1 || {
         echo "${cmd} not found, aborting"
         exit $ERROR
     }
@@ -29,8 +29,8 @@ function help {
 }
 
 function debug {
-    if [ ${DEBUG} -eq ${TRUE} ]; then
-        echo $@
+    if [ "${DEBUG}" -eq "${TRUE}" ]; then
+        echo "$@"
     fi
 }
 
@@ -70,7 +70,7 @@ do
             shift # past value
             ;;
         --debug)
-            DEBUG=${TRUE}
+            DEBUG="${TRUE}"
             shift # past argument
             ;;
         *)    # unknown option
@@ -84,22 +84,33 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 # validate options
 if [ -z "${HOST}" ]; then
     echo "--host <awx host> option is required"
-    PARAMS=${ERROR}
+    PARAMS="${ERROR}"
 fi
 if [ -z "${_USER}" ]; then
     echo "--user <awx api user> option is required"
-    PARAMS=${ERROR}
+    PARAMS="${ERROR}"
 fi
 if [ -z "${_PASS}" ]; then
     echo "--pass <awx api password> option is required"
-    PARAMS=${ERROR}
+    PARAMS="${ERROR}"
 fi
 if [ -z "${REPO}" ]; then
     echo "--repo <project reposority url> option is required"
-    PARAMS=${ERROR}
+    PARAMS="${ERROR}"
 fi
 if [ "${PARAMS}" == "${ERROR}" ]; then
-    exit ${ERROR}
+    PARAMS="${ERROR}"
+fi
+if [ -z "${_PASS}" ]; then
+    echo "--pass <awx api password> option is required"
+    PARAMS="${ERROR}"
+fi
+if [ -z "${REPO}" ]; then
+    echo "--repo <project reposority url> option is required"
+    PARAMS="${ERROR}"
+fi
+if [ "${PARAMS}" == "${ERROR}" ]; then
+    PARAMS="${ERROR}"
 fi
 
 # set defaults
@@ -107,23 +118,25 @@ if [ -z "${BRANCH}" ]; then
     BRANCH="master"
 fi
 
-tower-cli config host ${HOST} 2>&1 >/dev/null
-tower-cli config username ${_USER} 2>&1 >/dev/null
-tower-cli config password ${_PASS} 2>&1 >/dev/null
+# shellcheck disable=SC2069
+tower-cli config host "${HOST}" 2>&1 >/dev/null
+# shellcheck disable=SC2069
+tower-cli config username "${_USER}" 2>&1 >/dev/null
+# shellcheck disable=SC2069
+tower-cli config password "${_PASS}" 2>&1 >/dev/null
+# shellcheck disable=SC2069
 tower-cli config format json 2>&1 >/dev/null
 
 # retrieve awx project ids
-PRJ_JSON=$(tower-cli project list --scm-url ${REPO} --scm-branch ${BRANCH})
-
-if [ $? -ne 0 ]; then
+if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
     exit ${ERROR}
 
 else
 
-    PRJS=$(echo $PRJ_JSON | jq -cr '.results[] | {name,organization}')
+    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
 
-    if [ -z ${PRJS} ]; then
+    if [ -z "${PRJS}" ]; then
 
         echo "no projects found for repository ${REPO}"
 
@@ -131,14 +144,13 @@ else
 
         for PRJ in ${PRJS}; do
 
-            debug testing project ${PRJ_NAME}
+            debug testing project "${PRJ_NAME}"
 
-            PRJ_NAME=$(echo $PRJ | jq -r '.name')
-            PRJ_ORG=$(echo $PRJ | jq -r '.organization')
+            PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
+            PRJ_ORG=$(echo "$PRJ" | jq -r '.organization')
             echo "updating project ${PRJ_NAME}"
-            PRJ_UPDATE=$(tower-cli project update -n ${PRJ_NAME} --organization ${PRJ_ORG} --wait)
 
-            if [ $? -ne 0 ]; then
+            if PRJ_UPDATE=$(tower-cli project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
 
                 echo "unable to update project ${PRJ_ID}"
                 echo "${PRJ_UPDATE}"

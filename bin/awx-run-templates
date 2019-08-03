@@ -10,9 +10,9 @@ PARAMS=$SUCCESS
 
 function check_requirement {
     cmd=$1
-    command -v ${cmd} >/dev/null 2>&1 || {
+    command -v "${cmd}" >/dev/null 2>&1 || {
         echo "${cmd} not found, aborting"
-        exit $ERROR
+        exit "${ERROR}"
     }
 }
 
@@ -29,8 +29,8 @@ function help {
 }
 
 function debug {
-    if [ ${DEBUG} -eq ${TRUE} ]; then
-        echo $@
+    if [ "${DEBUG}" -eq "${TRUE}" ]; then
+        echo "$@"
     fi
 }
 
@@ -107,23 +107,25 @@ if [ -z "${BRANCH}" ]; then
     BRANCH="master"
 fi
 
-tower-cli config host ${HOST} 2>&1 >/dev/null
-tower-cli config username ${_USER} 2>&1 >/dev/null
-tower-cli config password ${_PASS} 2>&1 >/dev/null
+# shellcheck disable=SC2069
+tower-cli config host "${HOST}" 2>&1 >/dev/null
+# shellcheck disable=SC2069
+tower-cli config username "${_USER}" 2>&1 >/dev/null
+# shellcheck disable=SC2069
+tower-cli config password "${_PASS}" 2>&1 >/dev/null
+# shellcheck disable=SC2069
 tower-cli config format json 2>&1 >/dev/null
 
 # retrieve awx project ids
-PRJ_JSON=$(tower-cli project list --scm-url ${REPO} --scm-branch ${BRANCH})
-
-if [ $? -ne 0 ]; then
+if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
     exit ${ERROR}
 
 else
 
-    PRJS=$(echo $PRJ_JSON | jq -cr '.results[] | {name,organization}')
+    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
 
-    if [ -z ${PRJS} ]; then
+    if [ -z "${PRJS}" ]; then
 
         echo "no projects found for repository ${REPO}"
 
@@ -131,14 +133,13 @@ else
 
         for PRJ in ${PRJS}; do
 
-            debug testing project ${PRJ_NAME}
+            debug testing project "${PRJ_NAME}"
 
-            PRJ_NAME=$(echo $PRJ | jq -r '.name')
-            PRJ_ORG=$(echo $PRJ | jq -r '.organization')
+            PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
+            PRJ_ORG=$(echo "$PRJ" | jq -r '.organization')
             echo "updating project ${PRJ_NAME}"
-            PRJ_UPDATE=$(tower-cli project update -n ${PRJ_NAME} --organization ${PRJ_ORG} --wait)
 
-            if [ $? -ne 0 ]; then
+            if PRJ_UPDATE=$(tower-cli project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
 
                 echo "unable to update project ${PRJ_ID}"
                 echo "${PRJ_UPDATE}"
