@@ -1,0 +1,21 @@
+_copy_without_render: ['templates']
+_template: 'gl:shellm/cookiecutter-shellm'
+author_email: 'teodoro.cook@gmail.com'
+author_fullname: 'Ted Cook'
+author_username: 'teddyphreak'
+copyright_date: '2019'
+copyright_holder: 'Ted Cook'
+copyright_holder_email: 'teodoro.cook@gmail.com'
+copyright_license: 'MIT License'
+project_description: 'A basher module with custom awx cli helpers'
+project_name: 'basher-awx'
+repository_name: 'basher-awx'
+repository_namespace: 'nephelaiio'
+repository_provider: 'github.com'
+script_name: 'awx_update_projects'
+readme_sections:
+  - summary
+  - demo
+  - installation
+  - usage
+logo: null
