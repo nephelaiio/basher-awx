@@ -15,8 +15,8 @@ basher install nephelaiio/basher-awx
 ## Usage
 Command-line:
 ```
-awx_update_projects --help
-awx_run_templates --help
+awx-update-projects --help
+awx-run-templates --help
 ```
 
 As a library:

@@ -12,7 +12,6 @@ project_name: 'basher-awx'
 repository_name: 'basher-awx'
 repository_namespace: 'nephelaiio'
 repository_provider: 'github.com'
-script_name: 'awx_update_projects'
 readme_sections:
   - summary
   - demo

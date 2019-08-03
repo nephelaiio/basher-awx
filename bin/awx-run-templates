@@ -17,8 +17,7 @@ function check_requirement {
 }
 
 function help {
-    echo "usage:"
-    echo "   $0 OPTIONS"
+    echo "$0 OPTIONS"
     echo
     echo "OPTIONS:"
     echo "   --host <awx host>"
