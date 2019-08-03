@@ -105,10 +105,6 @@ if [ -z "${_PASS}" ]; then
     echo "--pass <awx api password> option is required"
     PARAMS="${ERROR}"
 fi
-if [ -z "${REPO}" ]; then
-    echo "--repo <project reposority url> option is required"
-    PARAMS="${ERROR}"
-fi
 if [ "${PARAMS}" == "${ERROR}" ]; then
     PARAMS="${ERROR}"
 fi
@@ -129,10 +125,6 @@ tower-cli config format json 2>&1 >/dev/null
 
 # retrieve awx project ids
 if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
-
-    exit ${ERROR}
-
-else
 
     PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
 
@@ -163,5 +155,10 @@ else
     fi
 
     exit ${SUCCESS}
+
+else
+
+    echo "unable to query project list from ${HOST}"
+    exit ${ERROR}
 
 fi

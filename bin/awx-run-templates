@@ -119,10 +119,6 @@ tower-cli config format json 2>&1 >/dev/null
 # retrieve awx project ids
 if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
-    exit ${ERROR}
-
-else
-
     PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
 
     if [ -z "${PRJS}" ]; then
@@ -152,5 +148,10 @@ else
     fi
 
     exit ${SUCCESS}
+
+else
+
+    echo "unable to query project list from ${HOST}"
+    exit ${ERROR}
 
 fi
