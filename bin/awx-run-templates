@@ -16,13 +16,28 @@ function check_requirement {
     }
 }
 
+function array_contains {
+    local array="$1[@]"
+    local seeking=$2
+    local in=1
+    for element in "${!array}"; do
+        if [[ $element == $seeking ]]; then
+            in=0
+            break
+        fi
+    done
+    return $in
+}
+
 function help {
-    echo "$0 OPTIONS <template name> [... <template_name>]"
+    echo "$0 OPTIONS <playbook> [ <playbook> ... ]"
     echo
     echo "OPTIONS:"
     echo "   --host <awx host>"
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
+    echo "   --repo <awx project repository url>"
+    echo "  [--branch <awx project repository branch>]"
     echo "  [--debug]"
 }
 
@@ -67,6 +82,10 @@ do
             shift # past argument
             shift # past value
             ;;
+        --help)
+            help
+            exit ${SUCCESS}
+            ;;
         --debug)
             DEBUG=${TRUE}
             shift # past argument
@@ -92,11 +111,20 @@ if [ -z "${_PASS}" ]; then
     echo "--pass <awx api password> option is required"
     PARAMS=${ERROR}
 fi
-if [ "${PARAMS}" == "${ERROR}" ]; then
+if [ "${#POSITIONAL[@]}" -eq 0 ]; then
+    echo "at least one playbook name must be specified"
     exit ${ERROR}
 fi
-if [ "${#POSITIONAL[@]}" -eq 0 ]; then
-    echo "at least one template name must be specified"
+
+# set defaults
+if [ -z "${BRANCH}" ]; then
+    BRANCH="master"
+fi
+
+if [ "${PARAMS}" -eq "${ERROR}" ]; then
+    echo
+    help
+    exit ${PARAMS}
 fi
 
 # shellcheck disable=SC2069
@@ -111,7 +139,7 @@ tower-cli config format json 2>&1 >/dev/null
 # retrieve awx project ids
 if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
-    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
+    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,id}')
 
     if [ -z "${PRJS}" ]; then
 
@@ -121,25 +149,62 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
 
         for PRJ in ${PRJS}; do
 
-            debug testing project "${PRJ_NAME}"
-
             PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
-            PRJ_ORG=$(echo "$PRJ" | jq -r '.organization')
+            PRJ_ID=$(echo "$PRJ" | jq -r '.id')
 
-            if PRJ_UPDATE=$(tower-cli project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
+            if TPL_JSON=$(tower-cli job_template list); then
 
-                echo "executing ${PRJ_NAME}"
+                TPLS=$(echo "${TPL_JSON}" | jq -cr ".results[] | select(.summary_fields.project.id == ${PRJ_ID}) | {name,playbook}" )
+
+                if [ -z "$TPLS" ]; then
+
+                    echo "no templates found for project ${PRJ_NAME}"
+
+                else
+
+                    TPL_FOUND=${FALSE}
+
+                    for TPL in ${TPLS}; do
+
+                        TPL_NAME=$(echo "$TPL" | jq -r '.name')
+                        TPL_PLAY=$(echo "$TPL" | jq -r '.playbook')
+
+                        if ( array_contains POSITIONAL "${TPL_PLAY}" ); then
+
+                            TPL_FOUND=${TRUE}
+
+                            if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait); then
+
+                                echo "ran template ${TPL_NAME}"
+
+                            else
+
+                                echo "error executing template ${TPL_NAME}"
+                                echo "${TPL_RUN}"
+                                exit ${ERROR}
+
+                            fi
+
+                        fi
+
+                    done
+
+                    if [ ${TPL_FOUND} -eq ${FALSE} ]; then
+
+                        echo "no matching templates found for project ${PRJ_NAME} with playbooks ${POSITIONAL[@]}"
+
+                    fi
+
+                fi
+
 
             else
 
-                echo "unable to update project ${PRJ_ID}"
-                echo "${PRJ_UPDATE}"
-                exit ${ERROR}
+                echo "unable to query template list from ${HOST}"
 
             fi
 
         done
-
     fi
 
     exit ${SUCCESS}
