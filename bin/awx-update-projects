@@ -29,7 +29,7 @@ function help {
 }
 
 function debug {
-    if [ "${DEBUG}" -eq "${TRUE}" ]; then
+    if [ ${DEBUG} -eq ${TRUE} ]; then
         echo "$@"
     fi
 }
@@ -68,6 +68,10 @@ do
             BRANCH="$2"
             shift # past argument
             shift # past value
+            ;;
+        --help)
+            help
+            exit ${SUCCESS}
             ;;
         --debug)
             DEBUG="${TRUE}"
@@ -114,6 +118,12 @@ if [ -z "${BRANCH}" ]; then
     BRANCH="master"
 fi
 
+if [ "${PARAMS}" -eq "${ERROR}" ]; then
+    echo
+    help
+    exit ${PARAMS}
+fi
+
 # shellcheck disable=SC2069
 tower-cli config host "${HOST}" 2>&1 >/dev/null
 # shellcheck disable=SC2069
@@ -143,7 +153,7 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
 
             if PRJ_UPDATE=$(tower-cli project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
 
-                echo "updating project ${PRJ_NAME}"
+                echo "updated project ${PRJ_NAME}"
 
             else
 
