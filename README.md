@@ -17,6 +17,7 @@ Command-line:
 ```
 awx-update-projects --help
 awx-run-templates --help
+awx-run-playbook --help
 ```
 
 As a library:

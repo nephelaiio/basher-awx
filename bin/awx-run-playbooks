@@ -30,12 +30,14 @@ function array_contains {
 }
 
 function help {
-    echo "$0 OPTIONS <template> [ <template> ... ]"
+    echo "$0 OPTIONS <playbook> [ <playbook> ... ]"
     echo
     echo "OPTIONS:"
     echo "   --host <awx host>"
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
+    echo "   --repo <awx project repository url>"
+    echo "  [--branch <awx project repository branch>]"
     echo "  [--debug]"
 }
 
@@ -70,6 +72,16 @@ do
             shift # past argument
             shift # past value
             ;;
+        --repo)
+            REPO="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --branch)
+            BRANCH="$2"
+            shift # past argument
+            shift # past value
+            ;;
         --help)
             help
             exit ${SUCCESS}
@@ -100,7 +112,7 @@ if [ -z "${_PASS}" ]; then
     PARAMS=${ERROR}
 fi
 if [ "${#POSITIONAL[@]}" -eq 0 ]; then
-    echo "at least one template name must be specified"
+    echo "at least one playbook name must be specified"
     exit ${ERROR}
 fi
 
@@ -125,20 +137,81 @@ tower-cli config password "${_PASS}" 2>&1 >/dev/null
 tower-cli config format json 2>&1 >/dev/null
 
 # retrieve awx project ids
-for TPL_NAME in "${POSITIONAL[@]}"; do
+if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait); then
+    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,id}')
 
-            echo "ran template ${TPL_NAME}"
+    if [ -z "${PRJS}" ]; then
 
-        else
+        echo "no projects found for repository ${REPO}"
 
-            echo "error executing template ${TPL_NAME}"
-            echo "${TPL_RUN}"
-            exit ${ERROR}
+    else
 
-        fi
+        for PRJ in ${PRJS}; do
 
-done
+            PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
+            PRJ_ID=$(echo "$PRJ" | jq -r '.id')
 
-exit ${SUCCESS}
+            if TPL_JSON=$(tower-cli job_template list); then
+
+                TPLS=$(echo "${TPL_JSON}" | jq -cr ".results[] | select(.summary_fields.project.id == ${PRJ_ID}) | {name,playbook}" )
+
+                if [ -z "$TPLS" ]; then
+
+                    echo "no templates found for project ${PRJ_NAME}"
+
+                else
+
+                    TPL_FOUND=${FALSE}
+
+                    for TPL in ${TPLS}; do
+
+                        TPL_NAME=$(echo "$TPL" | jq -r '.name')
+                        TPL_PLAY=$(echo "$TPL" | jq -r '.playbook')
+
+                        if ( array_contains POSITIONAL "${TPL_PLAY}" ); then
+
+                            TPL_FOUND=${TRUE}
+
+                            if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait); then
+
+                                echo "ran template ${TPL_NAME}"
+
+                            else
+
+                                echo "error executing template ${TPL_NAME}"
+                                echo "${TPL_RUN}"
+                                exit ${ERROR}
+
+                            fi
+
+                        fi
+
+                    done
+
+                    if [ ${TPL_FOUND} -eq ${FALSE} ]; then
+
+                        echo "no matching templates found for project ${PRJ_NAME} with playbooks ${POSITIONAL[@]}"
+
+                    fi
+
+                fi
+
+
+            else
+
+                echo "unable to query template list from ${HOST}"
+
+            fi
+
+        done
+    fi
+
+    exit ${SUCCESS}
+
+else
+
+    echo "unable to query project list from ${HOST}"
+    exit ${ERROR}
+
+fi
