@@ -21,7 +21,7 @@ function array_contains {
     local seeking=$2
     local in=1
     for element in "${!array}"; do
-        if [[ $element == $seeking ]]; then
+        if [[ $element == "$seeking" ]]; then
             in=0
             break
         fi
@@ -191,7 +191,7 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
 
                     if [ ${TPL_FOUND} -eq ${FALSE} ]; then
 
-                        echo "no matching templates found for project ${PRJ_NAME} with playbooks ${POSITIONAL[@]}"
+                        echo "no matching templates found for project ${PRJ_NAME} with playbooks" "${POSITIONAL[@]}"
 
                     fi
 
