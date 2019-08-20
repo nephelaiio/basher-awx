@@ -116,24 +116,24 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
 fi
 
 # shellcheck disable=SC2069
-tower-cli config host "${HOST}" 2>&1 >/dev/null
+tower-cli config host "${HOST}" >/dev/null 2>&1
 # shellcheck disable=SC2069
-tower-cli config username "${_USER}" 2>&1 >/dev/null
+tower-cli config username "${_USER}" >/dev/null 2>&1
 # shellcheck disable=SC2069
-tower-cli config password "${_PASS}" 2>&1 >/dev/null
+tower-cli config password "${_PASS}" >/dev/null 2>&1
 # shellcheck disable=SC2069
-tower-cli config format json 2>&1 >/dev/null
+tower-cli config format json >/dev/null 2>&1
 
 # retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
 
-    if tower-cli job_template get -n "${TPL_NAME}" 2>&1 >/dev/null
+    if tower-cli job_template get -n "${TPL_NAME}" >/dev/null 2>&1
 
     then
 
         echo "running template ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait 2>&1 >/dev/null)
+        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" >/dev/null --wait 2>&1)
 
         then
 
@@ -153,7 +153,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running workflow ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait 2>&1 >/dev/null)
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" >/dev/null --wait 2>&1)
 
         then
 
