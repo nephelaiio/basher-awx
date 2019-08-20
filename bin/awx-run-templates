@@ -124,8 +124,10 @@ tower-cli config password "${_PASS}" 2>&1 >/dev/null
 # shellcheck disable=SC2069
 tower-cli config format json 2>&1 >/dev/null
 
-# retrieve awx project ids
+# retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
+
+    if $(tower-cli job_template get -n ${TPL_NAME})
 
         if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait); then
 
@@ -137,7 +139,27 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
             echo "${TPL_RUN}"
             exit ${ERROR}
 
+        elif $(tower-cli workflow get -n ${TPL_NAME}); then
+
+            if TPL_RUN=$(tower-cli workflow_job launch -J "${TPL_NAME}" --wait); then
+
+                echo "ran workflow ${TPL_NAME}"
+
+            else
+
+                echo "error executing workflow ${TPL_NAME}"
+                echo "${TPL_RUN}"
+                exit ${ERROR}
+
+            fi
+
+        else
+
+            echo "could not find template or workflow '${TPL_NAME}'"
+
         fi
+
+    fi
 
 done
 
