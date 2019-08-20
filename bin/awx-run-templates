@@ -133,7 +133,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running template ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" >/dev/null --wait 2>&1)
+        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait >/dev/null 2>&1)
 
         then
 
@@ -147,13 +147,13 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         fi
 
-    elif tower-cli workflow get -n "${TPL_NAME}" 2>&1 >/dev/null
+    elif tower-cli workflow get -n "${TPL_NAME}" >/dev/null 2>&1
 
     then
 
         echo "running workflow ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" >/dev/null --wait 2>&1)
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait >/dev/null 2>&1)
 
         then
 
