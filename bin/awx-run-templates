@@ -127,7 +127,7 @@ tower-cli config format json 2>&1 >/dev/null
 # retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
 
-    if tower-cli job_template get -n ${TPL_NAME} 2>&1 >/dev/null
+    if tower-cli job_template get -n "${TPL_NAME}" 2>&1 >/dev/null
 
     then
 
@@ -147,13 +147,13 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         fi
 
-    elif tower-cli workflow get -n ${TPL_NAME} 2>&1 >/dev/null
+    elif tower-cli workflow get -n "${TPL_NAME}" 2>&1 >/dev/null
 
     then
 
         echo "running workflow ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W ${TPL_NAME} --wait 2>&1 >/dev/null)
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait 2>&1 >/dev/null)
 
         then
 
