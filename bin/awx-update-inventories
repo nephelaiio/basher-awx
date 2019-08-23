@@ -69,6 +69,16 @@ do
             shift # past argument
             shift # past value
             ;;
+        --from)
+            FROM="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --to)
+            TO="$2"
+            shift # past argument
+            shift # past value
+            ;;
         --help)
             help
             exit ${SUCCESS}
@@ -105,17 +115,22 @@ fi
 if [ "${PARAMS}" == "${ERROR}" ]; then
     PARAMS="${ERROR}"
 fi
-if [ -z "${_PASS}" ]; then
-    echo "--pass <awx api password> option is required"
-    PARAMS="${ERROR}"
-fi
-if [ "${PARAMS}" == "${ERROR}" ]; then
-    PARAMS="${ERROR}"
-fi
 
 # set defaults
 if [ -z "${BRANCH}" ]; then
     BRANCH="master"
+fi
+if [ -z "${FROM}" ]; then
+    CI_COMMIT_BEFORE_SHA_DEFAULT="$(git rev-list --max-count=1 HEAD)"
+    echo "CI_COMMIT_BEFORE_SHA=${CI_COMMIT_SHA}"
+    echo "CI_COMMIT_BEFORE_SHA_DEFAULT=${CI_COMMIT_BEFORE_SHA_DEFAULT}"
+    FROM="${CI_COMMIT_BEFORE_SHA:-$CI_COMMIT_BEFORE_SHA_DEFAULT}"
+fi
+if [ -z "${TO}" ]; then
+    CI_COMMIT_SHA_DEFAULT="$(git rev-list --max-count=2 HEAD | tail -1)"
+    echo "CI_COMMIT_SHA=${CI_COMMIT_SHA}"
+    echo "CI_COMMIT_SHA_DEFAULT=${CI_COMMIT_SHA_DEFAULT}"
+    TO="${CI_COMMIT_SHA:-$CI_COMMIT_SHA_DEFAULT}"
 fi
 
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
@@ -132,11 +147,12 @@ tower-cli config username "${_USER}" 2>&1 >/dev/null
 tower-cli config password "${_PASS}" 2>&1 >/dev/null
 # shellcheck disable=SC2069
 tower-cli config format json 2>&1 >/dev/null
+# set defaults
 
 # retrieve awx project ids
 if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
-    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
+    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {id,name,organization}')
 
     if [ -z "${PRJS}" ]; then
 
@@ -146,28 +162,64 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
 
         for PRJ in ${PRJS}; do
 
+            PRJ_ID= $(echo "$PRJ" | jq -r '.id')
             PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
             PRJ_ORG=$(echo "$PRJ" | jq -r '.organization')
 
-            debug testing project "${PRJ_NAME}"
+            # retrieve awx inventory source ids
+            INS_DATA=$(
+                curl -X GET -s \
+                    -H "Content-Type: application/json" \
+                    -H "Authorization: Bearer ${TOKEN}" \
+                    ${URL}/api/v2/inventory_sources/ | \
+                    jq ".results | map(select(.summary_fields.source_project.id == ${PRJ_ID}))"
+                )
 
-            if PRJ_UPDATE=$(tower-cli project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
+            # retrieve diff
+            DIFF=$(git diff --name-only ${FROM} ${TO})
 
-                echo "updated project ${PRJ_NAME}"
+            # get ids for inventory sources with source paths listed in git diff
+            INS_IDS=()
+            echo "scanning diff:"
+            echo "${DIFF}"
+            for file in $DIFF; do
+                # show off some impressive jmespath fu
+                FILE_INS_IDS=$(echo $INS_DATA |
+                                jq 'map(.source_path as $sp | select("'$file'" | startswith($sp)))' |
+                                jq -r 'map(.id) | .[]'
+                            )
+                echo "${file} match found for inventory sources ${FILE_INS_IDS}"
+                for id in $FILE_INS_IDS; do
+                    if [[ ! " ${INS_IDS[@]} " =~ " ${id} " ]]; then
+                        INS_IDS+=($id)
+                    fi;
+                done;
+            done;
 
-            else
+            echo "updating inventories for ids ${INS_IDS[@]}"
 
-                echo "unable to update project ${PRJ_ID}"
-                echo "${PRJ_UPDATE}"
-                exit ${ERROR}
+            for INS_ID in "${INS_IDS[@]}"; do
 
-            fi
+                # launch inventory update job
+                debug updating inventory source ${INS_ID}
+
+                if INS_UPDATE=$(tower-cli inventory_source update --wait ${INS_ID}); then
+
+                    echo "updated inventory id ${INS_ID}"
+
+                else
+
+                    echo "unable to update inventory source ${INS_ID}"
+                    echo "${INS_UPDATE}"
+                    exit ${ERROR}
+
+                fi
+
+            done
 
         done
 
     fi
-
-    exit ${SUCCESS}
 
 else
 
@@ -175,3 +227,5 @@ else
     exit ${ERROR}
 
 fi
+
+exit ${SUCCESS}
