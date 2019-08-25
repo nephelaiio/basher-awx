@@ -124,14 +124,11 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
     exit ${PARAMS}
 fi
 
-# shellcheck disable=SC2069
-tower-cli config host "${HOST}" 2>&1 >/dev/null
-# shellcheck disable=SC2069
-tower-cli config username "${_USER}" 2>&1 >/dev/null
-# shellcheck disable=SC2069
-tower-cli config password "${_PASS}" 2>&1 >/dev/null
-# shellcheck disable=SC2069
-tower-cli config format json 2>&1 >/dev/null
+
+tower-cli config host "${HOST}" >/dev/null 2>&1
+tower-cli config username "${_USER}" >/dev/null 2>&1
+tower-cli config password "${_PASS}" >/dev/null 2>&1
+tower-cli config format json >/dev/null 2>&1
 
 # retrieve awx project ids
 if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then

@@ -115,13 +115,9 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
     exit ${PARAMS}
 fi
 
-# shellcheck disable=SC2069
 tower-cli config host "${HOST}" >/dev/null 2>&1
-# shellcheck disable=SC2069
 tower-cli config username "${_USER}" >/dev/null 2>&1
-# shellcheck disable=SC2069
 tower-cli config password "${_PASS}" >/dev/null 2>&1
-# shellcheck disable=SC2069
 tower-cli config format json >/dev/null 2>&1
 
 # retrieve template
