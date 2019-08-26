@@ -6,7 +6,7 @@ FALSE=1
 DEBUG=${FALSE}
 ERROR=1
 SUCCESS=0
-PARAMS=$SUCCESS
+PARAMS=${SUCCESS}
 
 function check_requirement {
     cmd=$1
@@ -31,6 +31,12 @@ function help {
 function debug {
     if [ ${DEBUG} -eq ${TRUE} ]; then
         echo "$@"
+    fi
+}
+
+function debug_inline {
+    if [ ${DEBUG} -eq ${TRUE} ]; then
+        echo -n "$@"
     fi
 }
 
@@ -163,53 +169,69 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
                 echo "${1}" | base64 --decode | jq -r "${2}"
             }
 
+            PRJ_ID=$(_jq "${PRJB64}" ".id")
             PRJ_NAME=$(_jq "${PRJB64}" ".name")
 
             # retrieve awx inventory source ids
-            INS_DATA=$(tower-cli inventory_source list --source-project "${PRJ_NAME}" | jq ".results")
+            INS_DATA=$(tower-cli inventory_source list --source-project "${PRJ_ID}" | jq ".results")
 
             # retrieve diff
             DIFF=$(git diff --name-only "${FROM}" "${TO}")
 
             # get ids for inventory sources with source paths listed in git diff
-            INS_IDS=()
-            debug "scanning diff:"
-            debug "${DIFF}"
+            INS_NAMES=()
+            debug "scanning project ${PRJ_NAME}"
             for file in $DIFF; do
+                debug_inline "  scanning file ${file}"
                 # show off some impressive jmespath fu
-                FILE_INS_IDS=$(echo "$INS_DATA" |
-                                jq 'map(.source_path as $sp | select("$file" | startswith($sp)))' |
-                                jq -r 'map(.id) | .[]'
-                            )
-                echo "$FILE_INS_IDS"
-                for id in $(_iter_jq "${FILE_INS_IDS}"); do
-                    if [[ ! "${INS_IDS[*]}" =~ ${id} ]]; then
-                        echo "${file} match found for inventory sources ${FILE_INS_IDS}"
-                        INS_IDS+=($id)
-                    fi
-                done
-            done
+                FILE_INS_NAMES=$(echo "$INS_DATA" |
+                                     jq "map(.source_path as \$sp | select(\"${file}\" | startswith(\$sp)))" |
+                                     jq -r "map(.name) | join(\" \")"
+                              )
+                # ensure set semantics for INS_NAMES list
+                if [ ! -z "${FILE_INS_NAMES}" ]; then
 
-            echo "updating inventories for ids ${INS_IDS[*]}"
-
-            for INS_ID in "${INS_IDS[@]}"; do
-
-                # launch inventory update job
-                debug "updating inventory source ${INS_ID}"
-
-                if INS_UPDATE=$(tower-cli inventory_source update --wait "${INS_ID}"); then
-
-                    echo "updated inventory id ${INS_ID}"
+                    for INS_NAME in ${FILE_INS_NAMES}; do
+                        debug " [HIT]"
+                        if [[ ! "${INS_NAMES[*]}" =~ ${INS_NAME} ]]; then
+                            INS_NAMES+=("${INS_NAME}")
+                        fi
+                    done
 
                 else
 
-                    echo "unable to update inventory source ${INS_ID}"
-                    echo "${INS_UPDATE}"
-                    exit ${ERROR}
+                    debug " [MISS]"
 
                 fi
 
             done
+
+            # update inventory sources
+            if [ "${#INS_NAMES[@]}" -ne 0 ]; then
+
+                for INS_NAME in "${INS_NAMES[@]}"; do
+
+                    echo -n "updating inventory source ${INS_NAME}"
+
+                    if INS_UPDATE=$(tower-cli inventory_source update --wait "${INS_NAME}"); then
+
+                        echo " [OK]"
+
+                    else
+
+                        echo " [ERROR]"
+                        echo "${INS_UPDATE}"
+                        exit ${ERROR}
+
+                    fi
+
+                done
+
+            else
+
+                echo "no updates found for inventory sources"
+
+            fi
 
         done
 
