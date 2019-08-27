@@ -189,7 +189,7 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
                                      jq -r "map(.name) | join(\" \")"
                               )
                 # ensure set semantics for INS_NAMES list
-                if [ ! -z "${FILE_INS_NAMES}" ]; then
+                if [ -n "${FILE_INS_NAMES}" ]; then
 
                     for INS_NAME in ${FILE_INS_NAMES}; do
                         debug " [HIT]"
