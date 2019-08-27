@@ -146,15 +146,15 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
             PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
             PRJ_ORG=$(echo "$PRJ" | jq -r '.organization')
 
-            debug "testing project ${PRJ_NAME}"
+            echo -n "testing project ${PRJ_NAME}"
 
             if PRJ_UPDATE=$(tower-cli project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
 
-                echo "updated project ${PRJ_NAME}"
+                echo " [OK]"
 
             else
 
-                echo "unable to update project ${PRJ_ID}"
+                echo " [ERROR]"
                 echo "${PRJ_UPDATE}"
                 exit ${ERROR}
 
