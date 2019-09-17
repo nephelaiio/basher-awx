@@ -76,6 +76,7 @@ do
             ;;
         --debug)
             DEBUG=${TRUE}
+            AWXCLI_VERBOSE="-v"
             shift # past argument
             ;;
         *)    # unknown option
@@ -108,6 +109,9 @@ fi
 if [ -z "${BRANCH}" ]; then
     BRANCH="master"
 fi
+if [ -z "${DEBUG}" ]; then
+    AWXCLI_VERBOSE=""
+fi
 
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
     echo
@@ -129,7 +133,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running template ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait)
+        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait "${AWXCLI_VERBOSE}")
 
         then
 
@@ -149,7 +153,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running workflow ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait)
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait "${AWXCLI_VERBOSE}")
 
         then
 
