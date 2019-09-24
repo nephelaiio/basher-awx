@@ -173,7 +173,7 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
 
                             TPL_FOUND=${TRUE}
 
-                            if TPL_RUN=$(tower-cli job launch -J ${TPL_NAME} --wait ${AWXCLI_VERBOSE}); then
+                            if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE}); then
 
                                 echo "ran template ${TPL_NAME}"
 
