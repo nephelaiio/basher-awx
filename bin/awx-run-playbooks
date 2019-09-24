@@ -50,6 +50,10 @@ function debug {
 check_requirement tower-cli
 check_requirement jq
 
+# set defaults
+BRANCH="master"
+AWXCLI_VERBOSE=""
+
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -88,6 +92,7 @@ do
             ;;
         --debug)
             DEBUG=${TRUE}
+            AWXCLI_VERBOSE="--verbose"
             shift # past argument
             ;;
         *)    # unknown option
@@ -114,11 +119,6 @@ fi
 if [ "${#POSITIONAL[@]}" -eq 0 ]; then
     echo "at least one playbook name must be specified"
     exit ${ERROR}
-fi
-
-# set defaults
-if [ -z "${BRANCH}" ]; then
-    BRANCH="master"
 fi
 
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
@@ -169,7 +169,7 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
 
                             TPL_FOUND=${TRUE}
 
-                            if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait); then
+                            if TPL_RUN=$(tower-cli job launch -J ${TPL_NAME} --wait ${AWXCLI_VERBOSE}); then
 
                                 echo "ran template ${TPL_NAME}"
 

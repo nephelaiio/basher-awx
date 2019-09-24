@@ -49,7 +49,6 @@ check_requirement tower-cli
 check_requirement jq
 
 # set defaults
-BRANCH="master"
 AWXCLI_VERBOSE=""
 
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
@@ -80,7 +79,7 @@ do
             ;;
         --debug)
             DEBUG=${TRUE}
-            AWXCLI_VERBOSE="-v"
+            AWXCLI_VERBOSE="--verbose"
             shift # past argument
             ;;
         *)    # unknown option
@@ -129,7 +128,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running template ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait "${AWXCLI_VERBOSE}")
+        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
         then
 
@@ -149,7 +148,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running workflow ${TPL_NAME}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait "${AWXCLI_VERBOSE}")
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
         then
 
