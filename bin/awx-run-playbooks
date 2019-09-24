@@ -116,6 +116,10 @@ if [ -z "${_PASS}" ]; then
     echo "--pass <awx api password> option is required"
     PARAMS=${ERROR}
 fi
+if [ -z "${REPO}" ]; then
+    echo "--repo <awx repo url> option is required"
+    PARAMS=${ERROR}
+fi
 if [ "${#POSITIONAL[@]}" -eq 0 ]; then
     echo "at least one playbook name must be specified"
     exit ${ERROR}
