@@ -48,6 +48,10 @@ function debug {
 check_requirement tower-cli
 check_requirement jq
 
+# set defaults
+BRANCH="master"
+AWXCLI_VERBOSE=""
+
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -103,14 +107,6 @@ fi
 if [ "${#POSITIONAL[@]}" -eq 0 ]; then
     echo "at least one template name must be specified"
     exit ${ERROR}
-fi
-
-# set defaults
-if [ -z "${BRANCH}" ]; then
-    BRANCH="master"
-fi
-if [ -z "${DEBUG}" ]; then
-    AWXCLI_VERBOSE=""
 fi
 
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
