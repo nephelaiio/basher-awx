@@ -36,6 +36,7 @@ function help {
     echo "   --host <awx host>"
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
+    echo "   --opts <awx -e -l others> no required"
     echo "  [--debug]"
 }
 
@@ -70,6 +71,11 @@ do
             ;;
         --pass)
             _PASS="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --opts)
+            _OPTS="$2"
             shift # past argument
             shift # past value
             ;;
@@ -132,7 +138,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         then
 
-            echo "ran template ${TPL_NAME}"
+            echo "ran template ${TPL_NAME} ${_OPTS}"
 
         else
 
