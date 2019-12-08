@@ -134,7 +134,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running template ${TPL_NAME} with options ${_OPTS}"
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" ${_OPTS} --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" "${_OPTS}" --wait ${AWXCLI_VERBOSE})
 
         then
 
@@ -154,7 +154,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         echo "running workflow ${TPL_NAME} with options ${_OPTS}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" ${_OPTS} --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" "${_OPTS}" --wait ${AWXCLI_VERBOSE})
 
         then
 
