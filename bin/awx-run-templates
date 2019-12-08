@@ -36,6 +36,7 @@ function help {
     echo "   --host <awx host>"
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
+    echo "   --opts <awx -e -l others> no required"
     echo "  [--debug]"
 }
 
@@ -70,6 +71,11 @@ do
             ;;
         --pass)
             _PASS="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --opts)
+            _OPTS="$2"
             shift # past argument
             shift # past value
             ;;
@@ -126,17 +132,17 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
     then
 
-        echo "running template ${TPL_NAME}"
+        echo "running template ${TPL_NAME} with options ${_OPTS}"
 
-        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" "${_OPTS}" --wait ${AWXCLI_VERBOSE})
 
         then
 
-            echo "ran template ${TPL_NAME}"
+            echo "ran template ${TPL_NAME} with options ${_OPTS}"
 
         else
 
-            echo "error executing template ${TPL_NAME}"
+            echo "error executing template ${TPL_NAME} with options ${_OPTS}"
             echo "${TPL_RUN}"
             exit ${ERROR}
 
@@ -146,17 +152,17 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
     then
 
-        echo "running workflow ${TPL_NAME}"
+        echo "running workflow ${TPL_NAME} with options ${_OPTS}"
 
-        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(tower-cli workflow_job launch -W "${TPL_NAME}" "${_OPTS}" --wait ${AWXCLI_VERBOSE})
 
         then
 
-            echo "ran workflow ${TPL_NAME}"
+            echo "ran workflow ${TPL_NAME} with options ${_OPTS}"
 
         else
 
-            echo "error executing workflow ${TPL_NAME}"
+            echo "error executing workflow ${TPL_NAME} with options ${_OPTS}"
             echo "${TPL_RUN}"
             exit ${ERROR}
 
