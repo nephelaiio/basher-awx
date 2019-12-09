@@ -1,4 +1,7 @@
 # basher-awx
+
+[![Build Status](https://travis-ci.org/nephelaiio/basher-awx.svg?branch=master)](https://travis-ci.org/nephelaiio/basher-awx)
+
 A basher module with custom awx cli helpers
 
 - Changelog: https://github.com/nephelaiio/basher-awx/CHANGELOG.md
