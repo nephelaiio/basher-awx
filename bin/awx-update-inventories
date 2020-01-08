@@ -7,6 +7,7 @@ DEBUG=${FALSE}
 ERROR=1
 SUCCESS=0
 PARAMS=${SUCCESS}
+FORCE=${FALSE}
 
 function check_requirement {
     cmd=$1
@@ -24,6 +25,7 @@ function help {
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
     echo "   --repo <awx project repository url>"
+    echo "  [--force]"
     echo "  [--branch <awx project repository branch>]"
     echo "  [--debug]"
 }
@@ -88,6 +90,10 @@ do
         --help)
             help
             exit ${SUCCESS}
+            ;;
+        --force)
+            FORCE="${TRUE}"
+            shift # past argument
             ;;
         --debug)
             DEBUG="${TRUE}"
@@ -183,11 +189,19 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
             debug "scanning project ${PRJ_NAME}"
             for file in $DIFF; do
                 debug_inline "  scanning file ${file}"
+
                 # show off some impressive jmespath fu
-                FILE_INS_NAMES=$(echo "$INS_DATA" |
-                                     jq "map(.source_path as \$sp | select(\"${file}\" | startswith(\$sp)))" |
-                                     jq -r "map(.name) | join(\" \")"
-                              )
+                if [ ${FORCE} -eq ${TRUE} ]; then
+                    FILE_INS_NAMES=$(echo "$INS_DATA" |
+                                         jq -r "map(.name) | join(\" \")"
+                                  )
+                else
+                    FILE_INS_NAMES=$(echo "$INS_DATA" |
+                                         jq "map(.source_path as \$sp | select(\"${file}\" | startswith(\$sp)))" |
+                                         jq -r "map(.name) | join(\" \")"
+                                  )
+                fi
+
                 # ensure set semantics for INS_NAMES list
                 if [ -n "${FILE_INS_NAMES}" ]; then
 
