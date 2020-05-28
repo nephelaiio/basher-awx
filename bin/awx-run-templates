@@ -136,6 +136,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
     then
 
         echo "running template ${TPL_NAME}"
+        debug "executing command: ${AWXCLI_JOB} -J ${TPL_NAME}"
 
         if TPL_RUN=$(${AWXCLI_JOB} -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
@@ -156,6 +157,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
     then
 
         echo "running workflow ${TPL_NAME}"
+        debug "executing command: ${AWXCLI_WF} -W ${TPL_NAME}"
 
         if TPL_RUN=$(${AWXCLI_WF} -W "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
