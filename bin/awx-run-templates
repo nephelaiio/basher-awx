@@ -36,7 +36,7 @@ function help {
     echo "   --host <awx host>"
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
-    echo "   --opts <awx -e -l others> no required"
+    echo "  [--opts <options>]"
     echo "  [--debug]"
 }
 
@@ -135,13 +135,13 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
     then
 
-        echo "running template ${TPL_NAME} with options ${_OPTS}"
+        echo "running template ${TPL_NAME}"
 
         if TPL_RUN=$(${AWXCLI_JOB} -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
         then
 
-            echo "ran template ${TPL_NAME} with options ${_OPTS}"
+            echo "ran template ${TPL_NAME}"
 
         else
 
@@ -155,17 +155,17 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
     then
 
-        echo "running workflow ${TPL_NAME} with options ${_OPTS}"
+        echo "running workflow ${TPL_NAME}"
 
         if TPL_RUN=$(${AWXCLI_WF} -W "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
         then
 
-            echo "ran workflow ${TPL_NAME} with options ${_OPTS}"
+            echo "ran workflow ${TPL_NAME}"
 
         else
 
-            echo "error executing workflow ${TPL_NAME} with options ${_OPTS}"
+            echo "error executing workflow ${TPL_NAME}"
             echo "${TPL_RUN}"
             exit ${ERROR}
 
