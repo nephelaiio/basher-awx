@@ -145,7 +145,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         else
 
-            echo "error executing template ${TPL_NAME}
+            echo "error executing template ${TPL_NAME}"
             echo "${TPL_RUN}"
             exit ${ERROR}
 
