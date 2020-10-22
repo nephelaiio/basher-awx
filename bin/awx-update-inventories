@@ -205,7 +205,7 @@ if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}
                 # ensure set semantics for INS_NAMES list
                 if [ -n "${FILE_INS_NAMES}" ]; then
 
-                    INS_NAME_FILTER=$(echo ${FILE_INS_NAMES[@]} | uniq)
+                    INS_NAME_FILTER=$(echo "${FILE_INS_NAMES[@]}" | uniq)
                     IFS=', ' read -r -a INS_NAMES <<< "$INS_NAME_FILTER"
 
                     debug " [HIT]"
