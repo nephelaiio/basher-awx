@@ -152,7 +152,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
         echo "running template ${TPL_NAME}"
         debug "executing command: ${AWXCLI_JOB} -J ${TPL_NAME}"
 
-        if TPL_RUN=$(${AWXCLI_JOB} -J "${TPL_NAME}" "${_INVENTORY}" "${_CREDENTIAL}" --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(${AWXCLI_JOB} -J "${_INVENTORY}" "${_CREDENTIAL}" "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
         then
 
