@@ -86,7 +86,7 @@ do
             shift # past value
             ;;
         --credential)
-            _CREDENTIAL="${_CREDENTIAL}} --credential $2"
+            _CREDENTIAL="${_CREDENTIAL} --credential $2"
             shift # past argument
             shift # past value
             ;;
