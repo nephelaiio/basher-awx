@@ -36,6 +36,8 @@ function help {
     echo "   --host <awx host>"
     echo "   --user <awx user>"
     echo "   --pass <awx pass>"
+    echo "  [--inventory <awx inventory>]"
+    echo "  [--credential <awx credential> [--credential <awx credential>] ... ]"
     echo "  [--opts <options>]"
     echo "  [--debug]"
 }
