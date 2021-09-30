@@ -173,22 +173,6 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
         echo "running workflow ${TPL_NAME}"
         debug "executing command: ${AWXCLI_WF} -W ${TPL_NAME}"
 
-        if [[ "_${INVENTORY}" != "" ]]
-
-        then
-
-          echo "[WARN] ignoring invalid argument --inventory for workflow run"
-
-        fi
-
-        if [[ "_${CREDENTIAL}" != "" ]]
-
-        then
-
-          echo "[WARN] ignoring invalid argument --credential for workflow run"
-
-        fi
-
         if TPL_RUN=$(${AWXCLI_WF} -W "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
 
         then
