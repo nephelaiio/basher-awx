@@ -110,8 +110,8 @@ if [ -z "${_PASS}" ]; then
     echo "--pass <awx api password> option is required"
     PARAMS="${ERROR}"
 fi
-if [ -z "${INVENTORY}" ]; then
-    echo "--inventory <inventory name> option is required"
+if [ -z "${INVENTORY}" ] && [ ${#POSITIONAL[@]} -lt 1 ]; then
+    echo "--inventory <inventory name> option or positional argument is required"
     PARAMS="${ERROR}"
 fi
 if [ "${PARAMS}" == "${ERROR}" ]; then
@@ -130,10 +130,19 @@ tower-cli config username "${_USER}" >/dev/null 2>&1
 tower-cli config password "${_PASS}" >/dev/null 2>&1
 tower-cli config format json >/dev/null 2>&1
 
-# retrieve awx project ids
+# update
+if [ -n "${INVENTORY}" ]; then
+  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${INVENTORY}" "${ORGANIZATION}" | jq -r 'map(.id) | join(" ")')
+  for job in $UPDATE_JOBS; do
+    echo "waiting for job $job to complete"
+    tower-cli inventory_update wait $job
+  done
+fi
 
-UPDATE_JOBS=$(tower-cli inventory batch_update -n "${INVENTORY}" "${ORGANIZATION}" | jq -r 'map(.id) | join(" ")')
-for job in $UPDATE_JOBS; do
-  echo "waiting for job $job to complete"
-  tower-cli inventory_update wait $job
+for inventory in "${POSITIONAL[@]}"; do
+  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${inventory}" "${ORGANIZATION}" | jq -r 'map(.id) | join(" ")')
+  for job in $UPDATE_JOBS; do
+    echo "waiting for job $job to complete"
+    tower-cli inventory_update wait $job
+  done
 done
