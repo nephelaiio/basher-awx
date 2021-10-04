@@ -130,9 +130,9 @@ tower-cli config username "${_USER}" >/dev/null 2>&1
 tower-cli config password "${_PASS}" >/dev/null 2>&1
 tower-cli config format json >/dev/null 2>&1
 
-# update
+# update inventory
 if [ -n "${INVENTORY}" ]; then
-  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${INVENTORY}" "${ORGANIZATION}" | jq -r 'map(.id) | join(" ")')
+  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${INVENTORY}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
     tower-cli inventory_update wait $job
@@ -140,7 +140,7 @@ if [ -n "${INVENTORY}" ]; then
 fi
 
 for inventory in "${POSITIONAL[@]}"; do
-  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${inventory}" "${ORGANIZATION}" | jq -r 'map(.id) | join(" ")')
+  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${inventory}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
     tower-cli inventory_update wait $job
