@@ -10,249 +10,248 @@ PARAMS=${SUCCESS}
 FORCE=${FALSE}
 
 function check_requirement {
-    cmd=$1
-    command -v "${cmd}" >/dev/null 2>&1 || {
-        echo "${cmd} not found, aborting"
-        exit $ERROR
-    }
+  cmd=$1
+  command -v "${cmd}" >/dev/null 2>&1 || {
+    echo "${cmd} not found, aborting"
+    exit $ERROR
+  }
 }
 
 function help {
-    echo "$0 OPTIONS"
-    echo
-    echo "OPTIONS:"
-    echo "   --host <awx host>"
-    echo "   --user <awx user>"
-    echo "   --pass <awx pass>"
-    echo "   --repo <awx project repository url>"
-    echo "  [--force]"
-    echo "  [--branch <awx project repository branch>]"
-    echo "  [--debug]"
+  echo "$0 OPTIONS"
+  echo
+  echo "OPTIONS:"
+  echo "   --host <awx host>"
+  echo "   --user <awx user>"
+  echo "   --pass <awx pass>"
+  echo "   --repo <awx project repository url>"
+  echo "  [--force]"
+  echo "  [--branch <awx project repository branch>]"
+  echo "  [--debug]"
 }
 
 function debug {
-    if [ ${DEBUG} -eq ${TRUE} ]; then
-        echo "$@"
-    fi
+  if [ ${DEBUG} -eq ${TRUE} ]; then
+    echo "$@"
+  fi
 }
 
 function debug_inline {
-    if [ ${DEBUG} -eq ${TRUE} ]; then
-        echo -n "$@"
-    fi
+  if [ ${DEBUG} -eq ${TRUE} ]; then
+    echo -n "$@"
+  fi
 }
 
-check_requirement tower-cli
+AWXCLI_BIN=tower-cli
+
+check_requirement "${AWXCLI_BIN}"
 check_requirement jq
 
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
-    key="$1"
+  key="$1"
 
-    case $key in
-        --host)
-            HOST="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --user)
-            _USER="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --pass)
-            _PASS="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --repo)
-            REPO="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --branch)
-            BRANCH="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --from)
-            FROM="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --to)
-            TO="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --help)
-            help
-            exit ${SUCCESS}
-            ;;
-        --force)
-            FORCE="${TRUE}"
-            shift # past argument
-            ;;
-        --debug)
-            DEBUG="${TRUE}"
-            shift # past argument
-            ;;
-        *)  # unknown option
-            POSITIONAL+=("$1") # save it in an array for later
-            shift # past argument
-            ;;
-    esac
+  case $key in
+    --host)
+      HOST="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --user)
+      _USER="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --pass)
+      _PASS="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --repo)
+      REPO="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --branch)
+      BRANCH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --from)
+      FROM="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --to)
+      TO="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --help)
+      help
+      exit ${SUCCESS}
+      ;;
+    --force)
+      FORCE="${TRUE}"
+      shift # past argument
+      ;;
+    --debug)
+      DEBUG="${TRUE}"
+      shift # past argument
+      ;;
+    *)  # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # validate options
 if [ -z "${HOST}" ]; then
-    echo "--host <awx host> option is required"
-    PARAMS="${ERROR}"
+  echo "--host <awx host> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ -z "${_USER}" ]; then
-    echo "--user <awx api user> option is required"
-    PARAMS="${ERROR}"
+  echo "--user <awx api user> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ -z "${_PASS}" ]; then
-    echo "--pass <awx api password> option is required"
-    PARAMS="${ERROR}"
+  echo "--pass <awx api password> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ -z "${REPO}" ]; then
-    echo "--repo <project reposority url> option is required"
-    PARAMS="${ERROR}"
+  echo "--repo <project reposority url> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ "${PARAMS}" == "${ERROR}" ]; then
-    PARAMS="${ERROR}"
+  PARAMS="${ERROR}"
 fi
 
 # set defaults
 if [ -z "${BRANCH}" ]; then
-    BRANCH="master"
+  BRANCH="master"
 fi
 if [ -z "${FROM}" ]; then
-    CI_COMMIT_BEFORE_SHA_DEFAULT="$(git rev-list --max-count=1 HEAD)"
-    FROM="${CI_COMMIT_BEFORE_SHA:-$CI_COMMIT_BEFORE_SHA_DEFAULT}"
-    debug "CI_COMMIT_BEFORE_SHA=${FROM}"
+  CI_COMMIT_BEFORE_SHA_DEFAULT="$(git rev-list --max-count=1 HEAD)"
+  FROM="${CI_COMMIT_BEFORE_SHA:-$CI_COMMIT_BEFORE_SHA_DEFAULT}"
+  debug "CI_COMMIT_BEFORE_SHA=${FROM}"
 fi
 if [ -z "${TO}" ]; then
-    CI_COMMIT_SHA_DEFAULT="$(git rev-list --max-count=2 HEAD | tail -1)"
-    TO="${CI_COMMIT_SHA:-$CI_COMMIT_SHA_DEFAULT}"
-    debug "CI_COMMIT_SHA=${TO}"
+  CI_COMMIT_SHA_DEFAULT="$(git rev-list --max-count=2 HEAD | tail -1)"
+  TO="${CI_COMMIT_SHA:-$CI_COMMIT_SHA_DEFAULT}"
+  debug "CI_COMMIT_SHA=${TO}"
 fi
 
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
-    echo
-    help
-    exit ${PARAMS}
+  echo
+  help
+  exit ${PARAMS}
 fi
 
-tower-cli config host "${HOST}" >/dev/null 2>&1
-tower-cli config username "${_USER}" >/dev/null 2>&1
-tower-cli config password "${_PASS}" >/dev/null 2>&1
-tower-cli config format json >/dev/null 2>&1
+AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # retrieve awx project ids
-if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
+if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
-    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results')
+  PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results')
 
-    if [ -z "${PRJS}" ]; then
+  if [ -z "${PRJS}" ]; then
 
-        echo "no projects found for repository ${REPO}"
+    echo "no projects found for repository ${REPO}"
 
-    else
+  else
 
-        _iter_jq() {
-            echo "${1}" | jq -r '.[]| @base64'
-        }
+    _iter_jq() {
+      echo "${1}" | jq -r '.[]| @base64'
+    }
 
-        for PRJB64 in $(_iter_jq "${PRJS}"); do
+    for PRJB64 in $(_iter_jq "${PRJS}"); do
 
-            _jq() {
-                echo "${1}" | base64 --decode | jq -r "${2}"
-            }
+      _jq() {
+        echo "${1}" | base64 --decode | jq -r "${2}"
+      }
 
-            PRJ_ID=$(_jq "${PRJB64}" ".id")
-            PRJ_NAME=$(_jq "${PRJB64}" ".name")
+      PRJ_ID=$(_jq "${PRJB64}" ".id")
+      PRJ_NAME=$(_jq "${PRJB64}" ".name")
 
-            # retrieve awx inventory source ids
-            INS_DATA=$(tower-cli inventory_source list --source-project "${PRJ_ID}" | jq ".results")
+      # retrieve awx inventory source ids
+      INS_DATA=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_source list --source-project "${PRJ_ID}" | jq ".results")
 
-            # retrieve diff
-            DIFF=$(git diff --name-only "${FROM}" "${TO}")
+      # retrieve diff
+      DIFF=$(git diff --name-only "${FROM}" "${TO}")
 
-            # get ids for inventory sources with source paths listed in git diff
-            INS_NAMES=()
-            debug "scanning project ${PRJ_NAME}"
-            for file in $DIFF; do
-                debug_inline "  scanning file ${file}"
+      # get ids for inventory sources with source paths listed in git diff
+      INS_NAMES=()
+      debug "scanning project ${PRJ_NAME}"
+      for file in $DIFF; do
+        debug_inline "  scanning file ${file}"
 
-                # show off some impressive jmespath fu
-                if [ ${FORCE} -eq ${TRUE} ]; then
-                    FILE_INS_NAMES=$(echo "$INS_DATA" |
-                                         jq -r "map(.name) | join(\" \")"
-                                  )
-                else
-                    FILE_INS_NAMES=$(echo "$INS_DATA" |
-                                         jq "map(.source_path as \$sp | select(\"${file}\" | startswith(\$sp)))" |
-                                         jq -r "map(.name) | join(\" \")"
-                                  )
-                fi
+        # show off some impressive jmespath fu
+        if [ ${FORCE} -eq ${TRUE} ]; then
+          FILE_INS_NAMES=$(echo "$INS_DATA" |
+                             jq -r "map(.name) | join(\" \")"
+                        )
+        else
+          FILE_INS_NAMES=$(echo "$INS_DATA" |
+                             jq "map(.source_path as \$sp | select(\"${file}\" | startswith(\$sp)))" |
+                             jq -r "map(.name) | join(\" \")"
+                        )
+        fi
 
-                # ensure set semantics for INS_NAMES list
-                if [ -n "${FILE_INS_NAMES}" ]; then
+        # ensure set semantics for INS_NAMES list
+        if [ -n "${FILE_INS_NAMES}" ]; then
 
-                    INS_NAME_FILTER=$(echo "${FILE_INS_NAMES[@]}" | uniq)
-                    IFS=', ' read -r -a INS_NAMES <<< "$INS_NAME_FILTER"
+          INS_NAME_FILTER=$(echo "${FILE_INS_NAMES[@]}" | uniq)
+          IFS=', ' read -r -a INS_NAMES <<< "$INS_NAME_FILTER"
 
-                    debug " [HIT]"
+          debug " [HIT]"
 
-                else
+        else
 
-                    debug " [MISS]"
+          debug " [MISS]"
 
-                fi
+        fi
 
-            done
+      done
 
-            # update inventory sources
-            if [ "${#INS_NAMES[@]}" -ne 0 ]; then
+      # update inventory sources
+      if [ "${#INS_NAMES[@]}" -ne 0 ]; then
 
-                for INS_NAME in "${INS_NAMES[@]}"; do
+        for INS_NAME in "${INS_NAMES[@]}"; do
 
-                    echo -n "updating inventory source ${INS_NAME}"
+          echo -n "updating inventory source ${INS_NAME}"
 
-                    if INS_UPDATE=$(tower-cli inventory_source update --wait "${INS_NAME}"); then
+          if INS_UPDATE=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_source update --wait "${INS_NAME}"); then
 
-                        echo " [OK]"
+            echo " [OK]"
 
-                    else
+          else
 
-                        echo " [ERROR]"
-                        echo "${INS_UPDATE}"
-                        exit ${ERROR}
+            echo " [ERROR]"
+            echo "${INS_UPDATE}"
+            exit ${ERROR}
 
-                    fi
-
-                done
-
-            else
-
-                echo "no updates found for inventory sources"
-
-            fi
+          fi
 
         done
 
-    fi
+      else
+
+        echo "no updates found for inventory sources"
+
+      fi
+
+    done
+
+  fi
 
 else
 
-    echo "unable to query project list from ${HOST}"
-    exit ${ERROR}
+  echo "unable to query project list from ${HOST}"
+  exit ${ERROR}
 
 fi
 

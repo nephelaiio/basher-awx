@@ -10,38 +10,40 @@ PARAMS=${SUCCESS}
 FORCE=${FALSE}
 
 function check_requirement {
-    cmd=$1
-    command -v "${cmd}" >/dev/null 2>&1 || {
-        echo "${cmd} not found, aborting"
-        exit $ERROR
-    }
+  cmd=$1
+  command -v "${cmd}" >/dev/null 2>&1 || {
+    echo "${cmd} not found, aborting"
+    exit $ERROR
+  }
 }
 
 function help {
-    echo "$0 OPTIONS"
-    echo
-    echo "OPTIONS:"
-    echo "   --host <awx host>"
-    echo "   --user <awx user>"
-    echo "   --pass <awx pass>"
-    echo "   --inventory <inventory name>"
-    echo "  [--organization <inventory organization>]"
-    echo "  [--debug]"
+  echo "$0 OPTIONS"
+  echo
+  echo "OPTIONS:"
+  echo "   --host <awx host>"
+  echo "   --user <awx user>"
+  echo "   --pass <awx pass>"
+  echo "   --inventory <inventory name>"
+  echo "  [--organization <inventory organization>]"
+  echo "  [--debug]"
 }
 
 function debug {
-    if [ ${DEBUG} -eq ${TRUE} ]; then
-        echo "$@"
-    fi
+  if [ ${DEBUG} -eq ${TRUE} ]; then
+    echo "$@"
+  fi
 }
 
 function debug_inline {
-    if [ ${DEBUG} -eq ${TRUE} ]; then
-        echo -n "$@"
-    fi
+  if [ ${DEBUG} -eq ${TRUE} ]; then
+    echo -n "$@"
+  fi
 }
 
-check_requirement tower-cli
+AWXCLI_BIN=tower-cli
+
+check_requirement "${AWXCLI_BIN}"
 check_requirement jq
 
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
@@ -49,100 +51,97 @@ ORGANIZATION=""
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
-    key="$1"
+  key="$1"
 
-    case $key in
-        --host)
-            HOST="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --user)
-            _USER="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --pass)
-            _PASS="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --inventory)
-            INVENTORY="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --organization)
-            ORGANIZATION="--organization $2"
-            shift # past argument
-            shift # past value
-            ;;
-        --help)
-            help
-            exit ${SUCCESS}
-            ;;
-        --force)
-            FORCE="${TRUE}"
-            shift # past argument
-            ;;
-        --debug)
-            DEBUG="${TRUE}"
-            shift # past argument
-            ;;
-        *)  # unknown option
-            POSITIONAL+=("$1") # save it in an array for later
-            shift # past argument
-            ;;
-    esac
+  case $key in
+    --host)
+      HOST="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --user)
+      _USER="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --pass)
+      _PASS="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --inventory)
+      INVENTORY="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --organization)
+      ORGANIZATION="--organization $2"
+      shift # past argument
+      shift # past value
+      ;;
+    --help)
+      help
+      exit ${SUCCESS}
+      ;;
+    --force)
+      FORCE="${TRUE}"
+      shift # past argument
+      ;;
+    --debug)
+      DEBUG="${TRUE}"
+      shift # past argument
+      ;;
+    *)  # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # validate options
 if [ -z "${HOST}" ]; then
-    echo "--host <awx host> option is required"
-    PARAMS="${ERROR}"
+  echo "--host <awx host> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ -z "${_USER}" ]; then
-    echo "--user <awx api user> option is required"
-    PARAMS="${ERROR}"
+  echo "--user <awx api user> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ -z "${_PASS}" ]; then
-    echo "--pass <awx api password> option is required"
-    PARAMS="${ERROR}"
+  echo "--pass <awx api password> option is required"
+  PARAMS="${ERROR}"
 fi
 if [ -z "${INVENTORY}" ] && [ ${#POSITIONAL[@]} -lt 1 ]; then
-    echo "--inventory <inventory name> option or positional argument is required"
-    PARAMS="${ERROR}"
+  echo "--inventory <inventory name> option or positional argument is required"
+  PARAMS="${ERROR}"
 fi
 if [ "${PARAMS}" == "${ERROR}" ]; then
-    PARAMS="${ERROR}"
+  PARAMS="${ERROR}"
 fi
 
 # set defaults
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
-    echo
-    help
-    exit ${PARAMS}
+  echo
+  help
+  exit ${PARAMS}
 fi
 
-tower-cli config host "${HOST}" >/dev/null 2>&1
-tower-cli config username "${_USER}" >/dev/null 2>&1
-tower-cli config password "${_PASS}" >/dev/null 2>&1
-tower-cli config format json >/dev/null 2>&1
+AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # update inventory
 if [ -n "${INVENTORY}" ]; then
-  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${INVENTORY}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")')
+  UPDATE_JOBS=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory batch_update -n "${INVENTORY}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    tower-cli inventory_update wait $job
+    ${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_update wait $job
   done
 fi
 
 for inventory in "${POSITIONAL[@]}"; do
-  UPDATE_JOBS=$(tower-cli inventory batch_update -n "${inventory}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")')
+  UPDATE_JOBS=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory batch_update -n "${inventory}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    tower-cli inventory_update wait $job
+    ${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_update wait $job
   done
 done

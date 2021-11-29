@@ -9,209 +9,206 @@ SUCCESS=0
 PARAMS=$SUCCESS
 
 function check_requirement {
-    cmd=$1
-    command -v "${cmd}" >/dev/null 2>&1 || {
-        echo "${cmd} not found, aborting"
-        exit "${ERROR}"
-    }
+  cmd=$1
+  command -v "${cmd}" >/dev/null 2>&1 || {
+    echo "${cmd} not found, aborting"
+    exit "${ERROR}"
+  }
 }
 
 function array_contains {
-    local array="$1[@]"
-    local seeking=$2
-    local in=1
-    for element in "${!array}"; do
-        if [[ $element == "$seeking" ]]; then
-            in=0
-            break
-        fi
-    done
-    return $in
+  local array="$1[@]"
+  local seeking=$2
+  local in=1
+  for element in "${!array}"; do
+    if [[ $element == "$seeking" ]]; then
+      in=0
+      break
+    fi
+  done
+  return $in
 }
 
 function help {
-    echo "$0 OPTIONS <playbook> [ <playbook> ... ]"
-    echo
-    echo "OPTIONS:"
-    echo "   --host <awx host>"
-    echo "   --user <awx user>"
-    echo "   --pass <awx pass>"
-    echo "   --repo <awx project repository url>"
-    echo "  [--branch <awx project repository branch>]"
-    echo "  [--debug]"
+  echo "$0 OPTIONS <playbook> [ <playbook> ... ]"
+  echo
+  echo "OPTIONS:"
+  echo "   --host <awx host>"
+  echo "   --user <awx user>"
+  echo "   --pass <awx pass>"
+  echo "   --repo <awx project repository url>"
+  echo "  [--branch <awx project repository branch>]"
+  echo "  [--debug]"
 }
 
 function debug {
-    if [ "${DEBUG}" -eq "${TRUE}" ]; then
-        echo "$@"
-    fi
+  if [ "${DEBUG}" -eq "${TRUE}" ]; then
+    echo "$@"
+  fi
 }
-
-check_requirement tower-cli
-check_requirement jq
 
 # set defaults
 BRANCH="master"
+AWXCLI_BIN="tower-cli"
 AWXCLI_VERBOSE=""
+
+check_requirement "${AWXCLI_BIN}"
+check_requirement jq
 
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
-    key="$1"
+  key="$1"
 
-    case $key in
-        --host)
-            HOST="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --user)
-            _USER="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --pass)
-            _PASS="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --repo)
-            REPO="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --branch)
-            BRANCH="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --help)
-            help
-            exit ${SUCCESS}
-            ;;
-        --debug)
-            DEBUG=${TRUE}
-            AWXCLI_VERBOSE="--verbose"
-            shift # past argument
-            ;;
-        *)    # unknown option
-            POSITIONAL+=("$1") # save it in an array for later
-            shift # past argument
-            ;;
-    esac
+  case $key in
+    --host)
+      HOST="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --user)
+      _USER="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --pass)
+      _PASS="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --repo)
+      REPO="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --branch)
+      BRANCH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --help)
+      help
+      exit ${SUCCESS}
+      ;;
+    --debug)
+      DEBUG=${TRUE}
+      AWXCLI_VERBOSE="--verbose"
+      shift # past argument
+      ;;
+    *)    # unknown option
+      POSITIONAL+=("$1") # save it in an array for later
+      shift # past argument
+      ;;
+  esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # validate options
 if [ -z "${HOST}" ]; then
-    echo "--host <awx host> option is required"
-    PARAMS=${ERROR}
+  echo "--host <awx host> option is required"
+  PARAMS=${ERROR}
 fi
 if [ -z "${_USER}" ]; then
-    echo "--user <awx api user> option is required"
-    PARAMS=${ERROR}
+  echo "--user <awx api user> option is required"
+  PARAMS=${ERROR}
 fi
 if [ -z "${_PASS}" ]; then
-    echo "--pass <awx api password> option is required"
-    PARAMS=${ERROR}
+  echo "--pass <awx api password> option is required"
+  PARAMS=${ERROR}
 fi
 if [ -z "${REPO}" ]; then
-    echo "--repo <awx repo url> option is required"
-    PARAMS=${ERROR}
+  echo "--repo <awx repo url> option is required"
+  PARAMS=${ERROR}
 fi
 if [ "${#POSITIONAL[@]}" -eq 0 ]; then
-    echo "at least one playbook name must be specified"
-    exit ${ERROR}
+  echo "at least one playbook name must be specified"
+  exit ${ERROR}
 fi
 
 if [ "${PARAMS}" -eq "${ERROR}" ]; then
-    echo
-    help
-    exit ${PARAMS}
+  echo
+  help
+  exit ${PARAMS}
 fi
 
-tower-cli config host "${HOST}" >/dev/null 2>&1
-tower-cli config username "${_USER}" >/dev/null 2>&1
-tower-cli config password "${_PASS}" >/dev/null 2>&1
-tower-cli config format json >/dev/null 2>&1
+AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # retrieve awx project ids
-if PRJ_JSON=$(tower-cli project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
+if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
 
-    PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,id}')
+  PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,id}')
 
-    if [ -z "${PRJS}" ]; then
+  if [ -z "${PRJS}" ]; then
 
-        echo "no projects found for repository ${REPO}"
+    echo "no projects found for repository ${REPO}"
 
-    else
+  else
 
-        for PRJ in ${PRJS}; do
+    for PRJ in ${PRJS}; do
 
-            PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
-            PRJ_ID=$(echo "$PRJ" | jq -r '.id')
+      PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
+      PRJ_ID=$(echo "$PRJ" | jq -r '.id')
 
-            if TPL_JSON=$(tower-cli job_template list); then
+      if TPL_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" job_template list); then
 
-                TPLS=$(echo "${TPL_JSON}" | jq -cr ".results[] | select(.summary_fields.project.id == ${PRJ_ID}) | {name,playbook}" )
+        TPLS=$(echo "${TPL_JSON}" | jq -cr ".results[] | select(.summary_fields.project.id == ${PRJ_ID}) | {name,playbook}" )
 
-                if [ -z "$TPLS" ]; then
+        if [ -z "$TPLS" ]; then
 
-                    echo "no templates found for project ${PRJ_NAME}"
+          echo "no templates found for project ${PRJ_NAME}"
 
-                else
+        else
 
-                    TPL_FOUND=${FALSE}
+          TPL_FOUND=${FALSE}
 
-                    for TPL in ${TPLS}; do
+          for TPL in ${TPLS}; do
 
-                        TPL_NAME=$(echo "$TPL" | jq -r '.name')
-                        TPL_PLAY=$(echo "$TPL" | jq -r '.playbook')
-
-                        if ( array_contains POSITIONAL "${TPL_PLAY}" ); then
-
-                            TPL_FOUND=${TRUE}
-
-                            if TPL_RUN=$(tower-cli job launch -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE}); then
-
-                                echo "ran template ${TPL_NAME}"
-
-                            else
-
-                                echo "error executing template ${TPL_NAME}"
-                                echo "${TPL_RUN}"
-                                exit ${ERROR}
-
-                            fi
-
-                        fi
-
-                    done
-
-                    if [ ${TPL_FOUND} -eq ${FALSE} ]; then
-
-                        echo "no matching templates found for project ${PRJ_NAME} with playbooks" "${POSITIONAL[@]}"
-
-                    fi
-
-                fi
+            TPL_NAME=$(echo "$TPL" | jq -r '.name')
+            TPL_PLAY=$(echo "$TPL" | jq -r '.playbook')
 
 
-            else
+              TPL_FOUND=${TRUE}
 
-                echo "unable to query template list from ${HOST}"
+              if TPL_RUN=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" job launch -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE}); then
+
+                echo "ran template ${TPL_NAME}"
+
+              else
+
+                echo "error executing template ${TPL_NAME}"
+                echo "${TPL_RUN}"
+                exit ${ERROR}
+
+              fi
 
             fi
 
-        done
-    fi
+          done
 
-    exit ${SUCCESS}
+          if [ ${TPL_FOUND} -eq ${FALSE} ]; then
+
+            echo "no matching templates found for project ${PRJ_NAME} with playbooks" "${POSITIONAL[@]}"
+
+          fi
+
+        fi
+
+
+      else
+
+        echo "unable to query template list from ${HOST}"
+
+      fi
+
+    done
+  fi
+
+  exit ${SUCCESS}
 
 else
 
-    echo "unable to query project list from ${HOST}"
-    exit ${ERROR}
+  echo "unable to query project list from ${HOST}"
+  exit ${ERROR}
 
 fi
