@@ -180,7 +180,8 @@ if PRJ_JSON=$(eval "${cmd}"); then
       PRJ_NAME=$(_jq "${PRJB64}" ".name")
 
       # retrieve awx inventory source ids
-      INS_DATA=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_source list --source-project "${PRJ_ID}" | jq ".results")
+      cmd="${AWXCLI_BIN} inventory_source list --source-project ${PRJ_ID} ${AWXCLI_GLOBAL_ARGS}"
+      INS_DATA=$(eval "${cmd}" | jq ".results")
 
       # retrieve diff
       DIFF=$(git diff --name-only "${FROM}" "${TO}")

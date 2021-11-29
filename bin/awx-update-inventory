@@ -131,21 +131,21 @@ AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # update inventory
 if [ -n "${INVENTORY}" ]; then
-  cmd="${AWXCLI_BIN} ${AWXCLI_GLOBAL_ARGS} inventory batch_update -n ${INVENTORY} ${ORGANIZATION} | jq -r 'map(.id|tostring) | join(" ")'"
+  cmd="${AWXCLI_BIN} inventory batch_update -n ${INVENTORY} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
   debug "executing command: ${cmd}"
-  UPDATE_JOBS=$(eval "${cmd}")
+  UPDATE_JOBS=$(eval "${cmd}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    ${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_update wait $job
+    ${AWXCLI_BIN} inventory_update wait "$job" "${AWXCLI_GLOBAL_ARGS}"
   done
 fi
 
 for inventory in "${POSITIONAL[@]}"; do
-  cmd="${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory batch_update -n "${inventory}" "${ORGANIZATION}" | jq -r 'map(.id|tostring) | join(" ")'"
+  cmd="${AWXCLI_BIN} inventory batch_update -n ${inventory} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
   debug "executing command: ${cmd}"
-  UPDATE_JOBS=$(eval "${cmd}")
+  UPDATE_JOBS=$(eval "${cmd}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    ${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_update wait $job
+    ${AWXCLI_BIN} inventory_update wait "$job" "${AWXCLI_GLOBAL_ARGS}"
   done
 done

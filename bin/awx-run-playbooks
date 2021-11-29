@@ -173,7 +173,7 @@ if PRJ_JSON=$(eval "${cmd}"); then
 
               TPL_FOUND=${TRUE}
 
-              cmd="${AWXCLI_BIN} ${AWXCLI_GLOBAL_ARGS} job launch -J ${TPL_NAME} --wait ${AWXCLI_VERBOSE}"
+              cmd="${AWXCLI_BIN} job launch -J ${TPL_NAME} --wait ${AWXCLI_VERBOSE} ${AWXCLI_GLOBAL_ARGS}"
               debug "executing command: ${cmd}"
               if TPL_RUN=$(eval "${cmd}"); then
 
