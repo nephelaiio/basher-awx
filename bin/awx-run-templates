@@ -48,15 +48,18 @@ function debug {
     fi
 }
 
-check_requirement tower-cli
-check_requirement jq
-
 # set defaults
+AWXCLI_BIN="tower-cli"
 AWXCLI_VERBOSE=""
-AWXCLI_JOB="tower-cli job launch"
-AWXCLI_WF="tower-cli workflow_job launch"
+AWXCLI_JOB="$AWXCLI_BIN job launch"
+AWXCLI_WF="$AWXCLI_BIN workflow_job launch"
 _INVENTORY=""
 _CREDENTIAL=""
+_TAGS=""
+_SKIP_TAGS=""
+
+check_requirement "$AWXCLI_BIN"
+check_requirement jq
 
 # parse options (https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash)
 POSITIONAL=()
@@ -87,6 +90,16 @@ do
             ;;
         --credential)
             _CREDENTIAL="${_CREDENTIAL} --credential $2"
+            shift # past argument
+            shift # past value
+            ;;
+        --tags)
+            _TAGS="--tags $2"
+            shift # past argument
+            shift # past value
+            ;;
+        --skip-tags)
+            _SKIP_TAGS="--skip-tags $2"
             shift # past argument
             shift # past value
             ;;
@@ -137,22 +150,19 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
     exit ${PARAMS}
 fi
 
-tower-cli config host "${HOST}" >/dev/null 2>&1
-tower-cli config username "${_USER}" >/dev/null 2>&1
-tower-cli config password "${_PASS}" >/dev/null 2>&1
-tower-cli config format json >/dev/null 2>&1
+AWXCLI_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE} ${_TAGS} ${_SKIP_TAGS}"
 
 # retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
 
-    if tower-cli job_template get -n "${TPL_NAME}" >/dev/null 2>&1
+    if $AWXCLI_BIN job_template get -n "${TPL_NAME}" ${AWXCLI_ARGS} >/dev/null
 
     then
 
         echo "running template ${TPL_NAME}"
-        debug "executing command: ${AWXCLI_JOB} -J ${TPL_NAME}"
+        debug "executing command: ${AWXCLI_JOB} -J ${TPL_NAME} ${AWXCLI_ARGS}"
 
-        if TPL_RUN=$(${AWXCLI_JOB} ${_INVENTORY} ${_CREDENTIAL} -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(${AWXCLI_JOB} ${_INVENTORY} ${_CREDENTIAL} -J "${TPL_NAME}" --wait ${AWXCLI_ARGS})
 
         then
 
@@ -166,14 +176,14 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
         fi
 
-    elif tower-cli workflow get -n "${TPL_NAME}" >/dev/null 2>&1
+    elif $AWXCLI_BIN workflow get -n "${TPL_NAME}" ${AWXCLI_ARGS} >/dev/null 2>&1
 
     then
 
         echo "running workflow ${TPL_NAME}"
-        debug "executing command: ${AWXCLI_WF} -W ${TPL_NAME}"
+        debug "executing command: ${AWXCLI_WF} -W ${TPL_NAME} ${AWXCLI_ARGS}"
 
-        if TPL_RUN=$(${AWXCLI_WF} -W "${TPL_NAME}" --wait ${AWXCLI_VERBOSE})
+        if TPL_RUN=$(${AWXCLI_WF} -W "${TPL_NAME}" --wait ${AWXCLI_ARGS})
 
         then
 
