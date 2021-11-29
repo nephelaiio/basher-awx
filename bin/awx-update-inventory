@@ -136,7 +136,7 @@ if [ -n "${INVENTORY}" ]; then
   UPDATE_JOBS=$(eval "${cmd}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    ${AWXCLI_BIN} inventory_update wait "$job" "${AWXCLI_GLOBAL_ARGS}"
+    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS}
   done
 fi
 
@@ -146,6 +146,6 @@ for inventory in "${POSITIONAL[@]}"; do
   UPDATE_JOBS=$(eval "${cmd}" | jq -r 'map(.id|tostring) | join(" ")')
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    ${AWXCLI_BIN} inventory_update wait "$job" "${AWXCLI_GLOBAL_ARGS}"
+    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS}
   done
 done
