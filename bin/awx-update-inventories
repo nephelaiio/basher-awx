@@ -154,7 +154,9 @@ fi
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # retrieve awx project ids
-if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
+cmd="${AWXCLI_BIN} project list --scm-url ${REPO} --scm-branch ${BRANCH} ${AWXCLI_GLOBAL_ARGS}"
+debug "executing command: ${cmd}"
+if PRJ_JSON=$(eval "${cmd}"); then
 
   PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results')
 
@@ -224,7 +226,10 @@ if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${RE
 
           echo -n "updating inventory source ${INS_NAME}"
 
-          if INS_UPDATE=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" inventory_source update --wait "${INS_NAME}"); then
+          cmd="${AWXCLI_BIN} inventory_source update --wait ${INS_NAME} ${AWXCLI_GLOBAL_ARGS} "
+          debug
+          debug "executing command: ${cmd}"
+          if INS_UPDATE=$(eval "${cmd}"); then
 
             echo " [OK]"
 

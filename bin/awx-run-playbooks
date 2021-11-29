@@ -135,7 +135,8 @@ fi
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # retrieve awx project ids
-if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
+cmd="${AWXCLI_BIN} project list --scm-url ${REPO} --scm-branch ${BRANCH} ${AWXCLI_GLOBAL_ARGS} "
+if PRJ_JSON=$(eval "${cmd}"); then
 
   PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,id}')
 
@@ -150,7 +151,9 @@ if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${RE
       PRJ_NAME=$(echo "$PRJ" | jq -r '.name')
       PRJ_ID=$(echo "$PRJ" | jq -r '.id')
 
-      if TPL_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" job_template list); then
+      cmd="${AWXCLI_BIN} job_template list ${AWXCLI_GLOBAL_ARGS}"
+      debug "executing command: ${cmd}"
+      if TPL_JSON=$(eval "${cmd}"); then
 
         TPLS=$(echo "${TPL_JSON}" | jq -cr ".results[] | select(.summary_fields.project.id == ${PRJ_ID}) | {name,playbook}" )
 
@@ -170,7 +173,9 @@ if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${RE
 
               TPL_FOUND=${TRUE}
 
-              if TPL_RUN=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" job launch -J "${TPL_NAME}" --wait ${AWXCLI_VERBOSE}); then
+              cmd="${AWXCLI_BIN} ${AWXCLI_GLOBAL_ARGS} job launch -J ${TPL_NAME} --wait ${AWXCLI_VERBOSE}"
+              debug "executing command: ${cmd}"
+              if TPL_RUN=$(eval "${cmd}"); then
 
                 echo "ran template ${TPL_NAME}"
 

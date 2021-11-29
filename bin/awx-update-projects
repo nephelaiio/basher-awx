@@ -129,7 +129,9 @@ fi
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # retrieve awx project ids
-if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${REPO}" --scm-branch "${BRANCH}"); then
+cmd="${AWXCLI_BIN} project list --scm-url ${REPO} --scm-branch ${BRANCH} ${AWXCLI_GLOBAL_ARGS}"
+debug "executing command: ${cmd}"
+if PRJ_JSON=$(eval "${cmd}"); then
 
   PRJS=$(echo "${PRJ_JSON}" | jq -cr '.results[] | {name,organization}')
 
@@ -145,8 +147,11 @@ if PRJ_JSON=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project list --scm-url "${RE
       PRJ_ORG=$(echo "$PRJ" | jq -r '.organization')
 
       echo -n "updating project ${PRJ_NAME}"
+      cmd="${AWXCLI_BIN} project update -n ${PRJ_NAME} --organization ${PRJ_ORG} --wait ${AWXCLI_GLOBAL_ARGS}"
+      debug
+      debug "executing command: ${cmd}"
 
-      if PRJ_UPDATE=$(${AWXCLI_BIN} "${AWXCLI_GLOBAL_ARGS}" project update -n "${PRJ_NAME}" --organization "${PRJ_ORG}" --wait); then
+      if PRJ_UPDATE=$(eval "${cmd}"); then
 
         echo " [OK]"
 
