@@ -155,7 +155,7 @@ AWXCLI_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE} ${_TAGS} ${_SK
 # retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
 
-    if $AWXCLI_BIN job_template get -n "${TPL_NAME}" ${AWXCLI_ARGS} >/dev/null
+    if $AWXCLI_BIN job_template get -n "${TPL_NAME}" ${AWXCLI_ARGS} >/dev/null 2>&1
 
     then
 
