@@ -186,7 +186,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
     fi
 
     echo "running workflow ${TPL_NAME}"
-    cmd="${AWXCLI_WF} -W "${TPL_NAME}" --wait ${AWXCLI_GLOBAL_ARGS}"
+    cmd="${AWXCLI_WF} -W ${TPL_NAME} --wait ${AWXCLI_GLOBAL_ARGS}"
     debug "executing command: ${cmd}"
 
     if TPL_RUN=$(eval "$cmd")
