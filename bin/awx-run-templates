@@ -150,9 +150,9 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
   exit ${PARAMS}
 fi
 
+tower-cli config format json >/dev/null 2>&1
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 AWXCLI_LOCAL_ARGS="${_TAGS} ${_SKIP_TAGS}"
-
 
 # retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
@@ -162,7 +162,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
   if eval "${cmd}" >/dev/null 2>&1; then
 
     echo "running template ${TPL_NAME}"
-    cmd="${AWXCLI_JOB} -J ${TPL_NAME} ${_INVENTORY} ${_CREDENTIAL} --wait ${AWXCLI_GLOBAL_ARGS} ${AWX_LOCAL_ARGS}"
+    cmd="${AWXCLI_JOB} -J ${TPL_NAME} ${_INVENTORY} ${_CREDENTIAL} --wait ${AWXCLI_GLOBAL_ARGS} ${AWXCLI_LOCAL_ARGS}"
     debug "executing command: ${cmd}"
 
     if TPL_RUN=$(eval "${cmd}"); then
@@ -181,7 +181,7 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
   debug "executing command: ${cmd}"
   elif eval "${cmd}" >/dev/null 2>&1; then
 
-    if [ -n "$AWX_LOCAL_ARGS" ]; then
+    if [ -n "$AWXCLI_LOCAL_ARGS" ]; then
       "flags --tags/--skip-tags unavailable for workflow execution"
     fi
 

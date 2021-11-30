@@ -127,6 +127,7 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
   exit ${PARAMS}
 fi
 
+tower-cli config format json >/dev/null 2>&1
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # update inventory

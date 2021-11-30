@@ -126,10 +126,11 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
   exit ${PARAMS}
 fi
 
+tower-cli config format json >/dev/null 2>&1
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
 # retrieve awx project ids
-cmd="${AWXCLI_BIN} project list --format json --scm-url ${REPO} --scm-branch ${BRANCH} ${AWXCLI_GLOBAL_ARGS}"
+cmd="${AWXCLI_BIN} project list --scm-url ${REPO} --scm-branch ${BRANCH} ${AWXCLI_GLOBAL_ARGS}"
 debug "executing command: ${cmd}"
 if PRJ_JSON=$(eval "${cmd}"); then
 
