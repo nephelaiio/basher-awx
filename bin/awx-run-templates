@@ -152,7 +152,15 @@ fi
 
 tower-cli config format json >/dev/null 2>&1
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
-AWXCLI_LOCAL_ARGS="${_TAGS} ${_SKIP_TAGS}"
+if [ -n "${_TAGS}" ]; then
+  if [ -n "${_SKIP_TAGS}" ]; then
+    AWXCLI_LOCAL_ARGS="${_TAGS} ${_SKIP_TAGS}"
+  else
+    AWXCLI_LOCAL_ARGS="${_TAGS}"
+  fi
+elif [ -n "${_SKIP_TAGS}" ]; then
+  AWXCLI_LOCAL_ARGS="${_SKIP_TAGS}"
+fi
 
 # retrieve template
 for TPL_NAME in "${POSITIONAL[@]}"; do
@@ -185,7 +193,8 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
     if eval "${cmd}" >/dev/null 2>&1; then
 
       if [ -n "$AWXCLI_LOCAL_ARGS" ]; then
-        "flags --tags/--skip-tags unavailable for workflow execution"
+        echo "flags --tags/--skip-tags unavailable for workflow execution"
+        exit ${ERROR}
       fi
 
       echo "running workflow ${TPL_NAME}"
