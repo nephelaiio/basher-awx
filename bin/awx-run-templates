@@ -177,35 +177,39 @@ for TPL_NAME in "${POSITIONAL[@]}"; do
 
     fi
 
-  cmd="${AWXCLI_BIN} workflow get -n ${TPL_NAME} ${AWXCLI_GLOBAL_ARGS}"
-  debug "executing command: ${cmd}"
-  elif eval "${cmd}" >/dev/null 2>&1; then
+  else
 
-    if [ -n "$AWXCLI_LOCAL_ARGS" ]; then
-      "flags --tags/--skip-tags unavailable for workflow execution"
-    fi
-
-    echo "running workflow ${TPL_NAME}"
-    cmd="${AWXCLI_WF} -W ${TPL_NAME} --wait ${AWXCLI_GLOBAL_ARGS}"
+    cmd="${AWXCLI_BIN} workflow get -n ${TPL_NAME} ${AWXCLI_GLOBAL_ARGS}"
     debug "executing command: ${cmd}"
 
-    if TPL_RUN=$(eval "$cmd")
+    if eval "${cmd}" >/dev/null 2>&1; then
 
-    then
+      if [ -n "$AWXCLI_LOCAL_ARGS" ]; then
+        "flags --tags/--skip-tags unavailable for workflow execution"
+      fi
 
-      echo "ran workflow ${TPL_NAME}"
+      echo "running workflow ${TPL_NAME}"
+      cmd="${AWXCLI_WF} -W ${TPL_NAME} --wait ${AWXCLI_GLOBAL_ARGS}"
+      debug "executing command: ${cmd}"
+
+      if TPL_RUN=$(eval "$cmd"); then
+
+        echo "ran workflow ${TPL_NAME}"
+
+      else
+
+        echo "error executing workflow ${TPL_NAME}"
+        echo "${TPL_RUN}"
+        exit ${ERROR}
+
+      fi
 
     else
 
-      echo "error executing workflow ${TPL_NAME}"
-      echo "${TPL_RUN}"
+      echo "could not find template or workflow '${TPL_NAME}'"
       exit ${ERROR}
 
     fi
-
-  else
-
-    echo "could not find template or workflow '${TPL_NAME}'"
 
   fi
 

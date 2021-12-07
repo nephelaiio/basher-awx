@@ -139,6 +139,7 @@ if PRJ_JSON=$(eval "${cmd}"); then
   if [ -z "${PRJS}" ]; then
 
     echo "no projects found for repository ${REPO}"
+    exit ${ERROR}
 
   else
 

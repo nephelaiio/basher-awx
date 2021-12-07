@@ -130,6 +130,7 @@ fi
 tower-cli config format json >/dev/null 2>&1
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
 
+inventory_updated=$FALSE
 # update inventory
 if [ -n "${INVENTORY}" ]; then
   cmd="${AWXCLI_BIN} inventory batch_update -n ${INVENTORY} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
@@ -139,6 +140,7 @@ if [ -n "${INVENTORY}" ]; then
     echo "waiting for job $job to complete"
     ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS}
   done
+  inventory_updated=$TRUE
 fi
 
 for inventory in "${POSITIONAL[@]}"; do
@@ -149,4 +151,10 @@ for inventory in "${POSITIONAL[@]}"; do
     echo "waiting for job $job to complete"
     ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS}
   done
+  inventory_updated=$TRUE
 done
+
+if [ $inventory_updated -eq $FALSE ]; then
+  echo "no inventory found"
+  exit $ERROR
+fi
