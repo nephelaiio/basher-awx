@@ -7,7 +7,6 @@ DEBUG=${FALSE}
 ERROR=1
 SUCCESS=0
 PARAMS=${SUCCESS}
-FORCE=${FALSE}
 
 function check_requirement {
   cmd=$1
@@ -70,7 +69,7 @@ do
       shift # past value
       ;;
     --inventory)
-      INVENTORY="$2"
+      POSITIONAL+=("$2") # save it in an array for later
       shift # past argument
       shift # past value
       ;;
@@ -82,10 +81,6 @@ do
     --help)
       help
       exit ${SUCCESS}
-      ;;
-    --force)
-      FORCE="${TRUE}"
-      shift # past argument
       ;;
     --debug)
       DEBUG="${TRUE}"
@@ -128,33 +123,28 @@ if [ "${PARAMS}" -eq "${ERROR}" ]; then
 fi
 
 tower-cli config format json >/dev/null 2>&1
-AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} -p ${_PASS} ${AWXCLI_VERBOSE}"
+AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} ${AWXCLI_VERBOSE}"
+AWXCLI_SECRET_ARGS="-p ${_PASS}"
 
 inventory_updated=$FALSE
-# update inventory
-if [ -n "${INVENTORY}" ]; then
-  cmd="${AWXCLI_BIN} inventory batch_update -n ${INVENTORY} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
-  debug "executing command: ${cmd}"
-  UPDATE_JOBS=$(eval "${cmd}" | jq -r 'map(.id|tostring) | join(" ")')
-  for job in $UPDATE_JOBS; do
-    echo "waiting for job $job to complete"
-    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS}
-  done
-  inventory_updated=$TRUE
-fi
-
 for inventory in "${POSITIONAL[@]}"; do
   cmd="${AWXCLI_BIN} inventory batch_update -n ${inventory} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
-  debug "executing command: ${cmd}"
-  UPDATE_JOBS=$(eval "${cmd}" | jq -r 'map(.id|tostring) | join(" ")')
+  debug "executing command: ${cmd} -p XXXX"
+  if UPDATE_RET=$(eval "${cmd} ${AWXCLI_SECRET_ARGS}" 2>/dev/null); then
+    UPDATE_JOBS=$( echo "$UPDATE_RET" | jq -r 'map(.id|tostring) | join(" ")')
+  else
+    echo "error executing update for inventory '${inventory}'"
+    exit $ERROR
+  fi
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
-    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS}
+    # shellcheck disable=SC2086
+    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS} ${AWXCLI_SECRET_ARGS}
   done
-  inventory_updated=$TRUE
+  inventory_updated=${TRUE}
 done
 
-if [ $inventory_updated -eq $FALSE ]; then
+if [ $inventory_updated -eq ${FALSE} ]; then
   echo "no inventory found"
-  exit $ERROR
+  exit ${ERROR}
 fi
