@@ -38,6 +38,7 @@ function help {
   echo "   --pass <awx pass>"
   echo "   --repo <awx project repository url>"
   echo "  [--branch <awx project repository branch>]"
+  echo "  [--opts <options>]"
   echo "  [--debug]"
 }
 
@@ -84,6 +85,11 @@ do
       ;;
     --branch)
       BRANCH="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --opts)
+      AWXCLI_BIN="${AWXCLI_BIN} $2"
       shift # past argument
       shift # past value
       ;;

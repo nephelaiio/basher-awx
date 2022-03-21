@@ -25,6 +25,7 @@ function help {
   echo "   --pass <awx pass>"
   echo "   --inventory <inventory name>"
   echo "  [--organization <inventory organization>]"
+  echo "  [--opts <options>]"
   echo "  [--debug]"
 }
 
@@ -75,6 +76,11 @@ do
       ;;
     --organization)
       ORGANIZATION="--organization $2"
+      shift # past argument
+      shift # past value
+      ;;
+    --opts)
+      AWXCLI_BIN="${AWXCLI_BIN} $2"
       shift # past argument
       shift # past value
       ;;
