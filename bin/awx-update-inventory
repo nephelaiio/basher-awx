@@ -157,7 +157,7 @@ for inventory in "${POSITIONAL[@]}"; do
   for job in $UPDATE_JOBS; do
     echo "waiting for job $job to complete"
     # shellcheck disable=SC2086
-    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS} ${AWXCLI_SECRET_ARGS}
+    ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS} ${AWXCLI_SECRET_ARGS} -f human
   done
 
 done
