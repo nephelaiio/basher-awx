@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "basher-awx"
+version = "0.1.0"
+description = ""
+authors = ["Ted Cook <teodoro.cook@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "basher_awx"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[tool.poetry.group.dev.dependencies]
+ansible-tower-cli = "^3.3.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
