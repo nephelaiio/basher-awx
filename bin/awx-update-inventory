@@ -132,8 +132,20 @@ tower-cli config format json >/dev/null 2>&1
 AWXCLI_GLOBAL_ARGS="-h ${HOST} -u ${_USER} ${AWXCLI_VERBOSE}"
 AWXCLI_SECRET_ARGS="-p ${_PASS}"
 
-inventory_updated=$FALSE
 for inventory in "${POSITIONAL[@]}"; do
+
+  # skip absent inventories
+  cmd="${AWXCLI_BIN} inventory list -f id -n ${inventory} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
+  debug "executing command: ${cmd} -p XXXX"
+  LIST_OUT=$(eval "${cmd} ${AWXCLI_SECRET_ARGS}")
+  if [ -z "$LIST_OUT" ]; then
+    echo "inventory '${inventory}' does not exist"
+    continue
+  else
+    echo "updating inventory ${inventory} with id $LIST_OUT"
+  fi
+
+  # update inventory
   cmd="${AWXCLI_BIN} inventory batch_update -n ${inventory} ${ORGANIZATION} ${AWXCLI_GLOBAL_ARGS}"
   debug "executing command: ${cmd} -p XXXX"
   if UPDATE_RET=$(eval "${cmd} ${AWXCLI_SECRET_ARGS}" 2>/dev/null); then
@@ -147,10 +159,7 @@ for inventory in "${POSITIONAL[@]}"; do
     # shellcheck disable=SC2086
     ${AWXCLI_BIN} inventory_update wait $job ${AWXCLI_GLOBAL_ARGS} ${AWXCLI_SECRET_ARGS}
   done
-  inventory_updated=${TRUE}
+
 done
 
-if [ $inventory_updated -eq ${FALSE} ]; then
-  echo "no inventory found"
-  exit ${ERROR}
-fi
+exit "${SUCCESS}"
